@@ -67,9 +67,6 @@ static void play_init_resource(trace_data_read &trace_data, device *device)
 
 	if (desc.type == resource_type::buffer)
 	{
-		if ((desc.flags & resource_flags::structured) == 0 && desc.buffer.stride != 0)
-			desc.buffer.stride = 0;
-
 		if (subresources != 0)
 		{
 			data[0].resize(static_cast<size_t>(desc.buffer.size));
