@@ -46,7 +46,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int nCmdShow
 		return 1;
 	ShowWindow(window_handle, nCmdShow);
 
-	trace_data_read trace_data(lpCmdLine[0] == '\0' ? "api_trace_log.bin" : lpCmdLine);
+	trace_data_read trace_data(__argc > 1 ? __argv[1] : "api_trace_log.bin");
 	if (!trace_data.is_open())
 		return 2;
 
