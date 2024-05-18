@@ -110,10 +110,11 @@ std::unique_ptr<application> create_application_opengl(HWND window_handle, unsig
 
 	SetPixelFormat(hdc2, pix_format, &pfd);
 
-	// Create an OpenGL 4.3 context
+	// Create an OpenGL 4.5 context
 	const int attribs[] = {
 		0x2091 /* WGL_CONTEXT_MAJOR_VERSION_ARB */, 4,
-		0x2092 /* WGL_CONTEXT_MINOR_VERSION_ARB */, 3,
+		0x2092 /* WGL_CONTEXT_MINOR_VERSION_ARB */, 5,
+		0x9126 /* WGL_CONTEXT_PROFILE_MASK_ARB  */, 0x2 /* WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB */,
 		0 // Terminate list
 	};
 
