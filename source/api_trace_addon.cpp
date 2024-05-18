@@ -43,17 +43,21 @@ static inline uint64_t calc_texture_size(const resource_desc &desc, uint32_t sub
 {
 	const uint32_t level = (desc.texture.levels != 0) ? subresource % desc.texture.levels : subresource;
 
-	const uint32_t width = (box != nullptr) ? box->width() : std::max(desc.texture.width >> level, 1u);
-	const uint32_t height = (box != nullptr) ? box->height() : std::max(desc.texture.height >> level, 1u);
-
-	return desc.type == resource_type::texture_3d && data.slice_pitch != 0 ?
-		data.slice_pitch :
-		format_slice_pitch(
-			desc.texture.format,
-			desc.type != resource_type::texture_1d && data.row_pitch != 0 ?
-				data.row_pitch :
-				format_row_pitch(desc.texture.format, width),
-			height);
+	switch (desc.type)
+	{
+	case resource_type::texture_1d:
+		return format_row_pitch(desc.texture.format,
+			box != nullptr ? box->width() : std::max(desc.texture.width >> level, 1u));
+	case resource_type::texture_2d:
+		assert(data.row_pitch != 0);
+		return format_slice_pitch(desc.texture.format, data.row_pitch,
+			box != nullptr ? box->height() : std::max(desc.texture.height >> level, 1u));
+	case resource_type::texture_3d:
+		assert(data.slice_pitch != 0);
+		return data.slice_pitch * (box != nullptr ? box->depth() : desc.texture.depth_or_layers);
+	default:
+		return 0;
+	}
 }
 
 static void on_init_device(device *device)
