@@ -15,7 +15,7 @@ struct __declspec(uuid("589E9521-a7c5-4e07-9c64-1175b0cf3ab4")) device_data : tr
 {
 	static inline unsigned int index = 0;
 
-	device_data(device_api graphics_api) : trace_data_write(("api_trace_log" + (index != 0 ? "_" + std::to_string(index++) : "") + ".bin").c_str())
+	device_data(device_api graphics_api) : trace_data_write(("api_trace_log" + (++index > 1 ? "_" + std::to_string(index) : "") + ".bin").c_str())
 	{
 		constexpr uint64_t MAGIC = (uint64_t('A') << 0) | (uint64_t('P') << 8) | (uint64_t('I') << 16) | (uint64_t('T') << 24) | (uint64_t('R') << 32) | (uint64_t('A') << 40) | (uint64_t('C') << 48) | (uint64_t('E') << 56);
 		write(MAGIC);

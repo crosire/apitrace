@@ -52,6 +52,8 @@ struct trace_data_write : trace_data
 	explicit trace_data_write(const char *filename)
 	{
 		fopen_s(&s, filename, "wb");
+
+		assert(is_open());
 	}
 
 	template <typename T>
