@@ -77,7 +77,7 @@ static void play_init_resource(trace_data_read &trace_data, device *device)
 	}
 	else
 	{
-		if (0 == desc.texture.levels)
+		if (device->get_api() == device_api::opengl && desc.texture.levels == 0)
 			desc.texture.levels = 1;
 
 		const uint32_t levels = desc.texture.levels;
@@ -434,6 +434,9 @@ static void play_unmap_buffer_region(trace_data_read &trace_data, device *device
 		std::vector<uint8_t> data(static_cast<size_t>(size));
 		trace_data.read(data.data(), static_cast<size_t>(size));
 
+		if (s_resources[handle] == 0)
+			return;
+
 		void *mapped_data = nullptr;
 		if (device->map_buffer_region(s_resources[handle], offset, size, access, &mapped_data))
 		{
@@ -463,6 +466,9 @@ static void play_unmap_texture_region(trace_data_read &trace_data, device *devic
 		std::vector<uint8_t> data(static_cast<size_t>(trace_data.read<uint64_t>()));
 		trace_data.read(data.data(), data.size());
 
+		if (s_resources[handle] == 0)
+			return;
+
 		subresource_data mapped_data = {};
 		if (device->map_texture_region(s_resources[handle], subresource, has_box ? &box : nullptr, access, &mapped_data))
 		{
@@ -480,7 +486,7 @@ static void play_update_buffer_region(trace_data_read &trace_data, device *devic
 	std::vector<uint8_t> data(static_cast<size_t>(size));
 	trace_data.read(data.data(), data.size());
 
-	if (data.empty())
+	if (data.empty() || s_resources[handle] == 0)
 		return;
 
 	device->update_buffer_region(data.data(), s_resources[handle], offset, size);
@@ -499,7 +505,7 @@ static void play_update_texture_region(trace_data_read &trace_data, device *devi
 	std::vector<uint8_t> data(static_cast<size_t>(trace_data.read<uint64_t>()));
 	trace_data.read(data.data(), data.size());
 
-	if (data.empty())
+	if (data.empty() || s_resources[handle] == 0)
 		return;
 
 	subresource_data.data = data.data();
