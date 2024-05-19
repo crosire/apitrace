@@ -351,7 +351,7 @@ static void play_destroy_pipeline_layout(trace_data_read &trace_data, device *de
 	s_pipeline_layouts[handle] = {};
 }
 
-static void play_copy_descriptor_sets(trace_data_read &trace_data, device *device)
+static void play_copy_descriptor_tables(trace_data_read &trace_data, device *device)
 {
 	const auto count = trace_data.read<uint32_t>();
 
@@ -370,7 +370,7 @@ static void play_copy_descriptor_sets(trace_data_read &trace_data, device *devic
 
 	device->copy_descriptor_tables(count, copies.data());
 }
-static void play_update_descriptor_sets(trace_data_read &trace_data, device *device)
+static void play_update_descriptor_tables(trace_data_read &trace_data, device *device)
 {
 	const auto count = trace_data.read<uint32_t>();
 
@@ -709,9 +709,9 @@ static void play_bind_descriptor_tables(trace_data_read &trace_data, command_lis
 	std::vector<descriptor_table> tables(count);
 	for (uint32_t i = 0; i < count; ++i)
 	{
-		const auto set = trace_data.read<descriptor_table>().handle;
+		const auto table = trace_data.read<descriptor_table>().handle;
 
-		tables[i] = s_descriptor_tables[set];
+		tables[i] = s_descriptor_tables[table];
 	}
 
 	cmd_list->bind_descriptor_tables(stages, s_pipeline_layouts[layout], first, count, tables.data());
@@ -992,10 +992,10 @@ bool play_frame(trace_data_read &trace_data, command_list *cmd_list, effect_runt
 			break;
 
 		case reshade::addon_event::copy_descriptor_tables:
-			play_copy_descriptor_sets(trace_data, device);
+			play_copy_descriptor_tables(trace_data, device);
 			break;
 		case reshade::addon_event::update_descriptor_tables:
-			play_update_descriptor_sets(trace_data, device);
+			play_update_descriptor_tables(trace_data, device);
 			break;
 
 		case reshade::addon_event::init_query_heap:
