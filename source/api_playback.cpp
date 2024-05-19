@@ -886,10 +886,12 @@ static void play_resolve_texture_region(trace_data_read &trace_data, command_lis
 static void play_clear_depth_stencil_view(trace_data_read &trace_data, command_list *cmd_list)
 {
 	const auto dsv_handle = trace_data.read<resource_view>().handle;
-	const auto depth = trace_data.read<float>();
-	const auto stencil = trace_data.read<uint8_t>();
+	const bool has_depth = trace_data.read<bool>();
+	const auto depth = has_depth ? trace_data.read<float>() : 0.0f;
+	const bool has_stencil = trace_data.read<bool>();
+	const auto stencil = has_stencil ? trace_data.read<uint8_t>() : uint8_t(0);
 
-	cmd_list->clear_depth_stencil_view(s_resource_views[dsv_handle], &depth, &stencil);
+	cmd_list->clear_depth_stencil_view(s_resource_views[dsv_handle], has_depth ? &depth : nullptr, has_stencil ? &stencil : nullptr);
 }
 static void play_clear_render_target_view(trace_data_read &trace_data, command_list *cmd_list)
 {

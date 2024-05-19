@@ -901,8 +901,14 @@ static bool on_clear_depth_stencil_view(command_list *cmd_list, resource_view ds
 	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::clear_depth_stencil_view);
 	trace_data.write(dsv);
-	trace_data.write(depth != nullptr ? *depth : 0.0f);
-	trace_data.write(stencil != nullptr ? *stencil : uint8_t(0));
+	const bool has_depth = depth != nullptr;
+	trace_data.write(has_depth);
+	if (has_depth)
+		trace_data.write(*depth);
+	const bool has_stencil = stencil != nullptr;
+	trace_data.write(has_stencil);
+	if (has_stencil)
+		trace_data.write(*stencil);
 
 	return false;
 }
