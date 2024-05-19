@@ -63,7 +63,7 @@ std::unique_ptr<application> create_application_d3d12(HWND window_handle)
 	if (d3d12_module == nullptr)
 		return nullptr;
 
-	const auto create_dxgi = reinterpret_cast<decltype(&CreateDXGIFactory2)>(GetProcAddress(d3d12_module, "CreateDXGIFactory2"));
+	const auto create_dxgi = reinterpret_cast<decltype(&CreateDXGIFactory2)>(GetProcAddress(dxgi_module, "CreateDXGIFactory2"));
 	if (create_dxgi == nullptr)
 		return nullptr;
 	const auto create_d3d12 = reinterpret_cast<decltype(&D3D12CreateDevice)>(GetProcAddress(d3d12_module, "D3D12CreateDevice"));
