@@ -97,6 +97,10 @@ static void on_destroy_swapchain(swapchain *swapchain)
 
 	auto &trace_data = device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::destroy_swapchain);
+	const uint32_t buffer_count = swapchain->get_back_buffer_count();
+	trace_data.write(buffer_count);
+	for (uint32_t i = 0; i < buffer_count; ++i)
+		trace_data.write(swapchain->get_back_buffer(i));
 }
 
 static void on_init_sampler(device *device, const sampler_desc &desc, sampler handle)

@@ -36,6 +36,18 @@ static void play_init_swapchain(trace_data_read &trace_data, effect_runtime *run
 }
 static void play_destroy_swapchain(trace_data_read &trace_data, effect_runtime *runtime)
 {
+	device *const device = runtime->get_device();
+
+	const auto buffer_count = trace_data.read<uint32_t>();
+
+	for (uint32_t i = 0; i < buffer_count; ++i)
+	{
+		const auto handle = trace_data.read<resource>().handle;
+
+		s_resources[handle] = {};
+		if (device->get_api() == device_api::d3d9 || device->get_api() == device_api::opengl)
+			s_resource_views[handle] = {};
+	}
 }
 
 static void play_init_sampler(trace_data_read &trace_data, device *device)

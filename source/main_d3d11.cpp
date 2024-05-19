@@ -69,7 +69,7 @@ std::unique_ptr<application> create_application_d3d11(HWND window_handle, unsign
 	DXGI_SWAP_CHAIN_DESC desc = {};
 	desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	desc.SampleDesc = { samples, 0u };
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	desc.BufferUsage = DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	desc.BufferCount = 1;
 	desc.OutputWindow = window_handle;
 	desc.Windowed = true;
