@@ -595,9 +595,6 @@ static void play_bind_pipeline(trace_data_read &trace_data, command_list *cmd_li
 	const auto stages = trace_data.read<pipeline_stage>();
 	const auto handle = trace_data.read<pipeline>().handle;
 
-	if (handle == 0)
-		return; // Skip updates that unbind pipelines
-
 	cmd_list->bind_pipeline(stages, s_pipelines[handle]);
 }
 static void play_bind_pipeline_states(trace_data_read &trace_data, command_list *cmd_list)
