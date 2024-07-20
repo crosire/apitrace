@@ -5,6 +5,7 @@
 
 #include "trace_data.hpp"
 #include <reshade.hpp>
+#include <string>
 #include <vector>
 #include <algorithm>
 #include <shared_mutex>
