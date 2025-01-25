@@ -875,9 +875,9 @@ static void play_resolve_texture_region(trace_data_read &trace_data, command_lis
 	const auto src_box = has_src_box ? trace_data.read<subresource_box>() : subresource_box {};
 	const auto dst_handle = trace_data.read<resource>().handle;
 	const auto dst_subresource = trace_data.read<uint32_t>();
-	const auto dst_x = trace_data.read<int32_t>();
-	const auto dst_y = trace_data.read<int32_t>();
-	const auto dst_z = trace_data.read<int32_t>();
+	const auto dst_x = trace_data.read<uint32_t>();
+	const auto dst_y = trace_data.read<uint32_t>();
+	const auto dst_z = trace_data.read<uint32_t>();
 	const auto resolve_format = trace_data.read<format>();
 
 	cmd_list->resolve_texture_region(s_resources[src_handle], src_subresource, has_src_box ? &src_box : nullptr, s_resources[dst_handle], dst_subresource, dst_x, dst_y, dst_z, resolve_format);

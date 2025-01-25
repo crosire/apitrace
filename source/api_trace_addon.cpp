@@ -873,7 +873,7 @@ static bool on_copy_texture_to_buffer(command_list *cmd_list, resource src, uint
 
 	return false;
 }
-static bool on_resolve_texture_region(command_list *cmd_list, resource src, uint32_t src_subresource, const subresource_box *src_box, resource dst, uint32_t dst_subresource, int32_t dst_x, int32_t dst_y, int32_t dst_z, format format)
+static bool on_resolve_texture_region(command_list *cmd_list, resource src, uint32_t src_subresource, const subresource_box *src_box, resource dst, uint32_t dst_subresource, uint32_t dst_x, uint32_t dst_y, uint32_t dst_z, format format)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
