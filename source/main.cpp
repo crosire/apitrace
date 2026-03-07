@@ -63,7 +63,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int nCmdShow
 		return 1;
 
 	reshade::api::effect_runtime *runtime = nullptr;
-	if (!reshade::create_effect_runtime(graphics_api, app->get_device(), app->get_command_queue(), app->get_swapchain(), ".\\", &runtime))
+	if (!reshade::create_effect_runtime(graphics_api, app->get_device(), app->get_command_queue(), app->get_swapchain(), ".\\ReShade.ini", &runtime))
 		return 1;
 
 	MSG msg = {};
