@@ -6,8 +6,9 @@
 #pragma once
 
 #include "reshade_api_resource.hpp"
+#include <cstddef>
 
-namespace reshade { namespace api
+namespace reshade::api
 {
 	/// <summary>
 	/// Flags that specify the shader stages in the render pipeline.
@@ -83,6 +84,14 @@ namespace reshade { namespace api
 		/// </summary>
 		sampler_with_resource_view = 1,
 		/// <summary>
+		/// Descriptors are either of type <see cref="buffer_shader_resource_view"/> or <see cref="texture_shader_resource_view"/>.
+		/// </summary>
+		shader_resource_view = 2,
+		/// <summary>
+		/// Descriptors are either of type <see cref="buffer_unordered_access_view"/> or <see cref="texture_unordered_access_view"/>.
+		/// </summary>
+		unordered_access_view = 3,
+		/// <summary>
 		/// Descriptors are an array of <see cref="resource_view"/>.
 		/// </summary>
 		buffer_shader_resource_view = 4,
@@ -93,13 +102,11 @@ namespace reshade { namespace api
 		/// <summary>
 		/// Descriptors are an array of <see cref="resource_view"/>.
 		/// </summary>
-		texture_shader_resource_view = 2,
-		shader_resource_view = texture_shader_resource_view,
+		texture_shader_resource_view = shader_resource_view,
 		/// <summary>
 		/// Descriptors are an array of <see cref="resource_view"/>.
 		/// </summary>
-		texture_unordered_access_view = 3,
-		unordered_access_view = texture_unordered_access_view,
+		texture_unordered_access_view = unordered_access_view,
 		/// <summary>
 		/// Descriptors are an array of <see cref="buffer_range"/>.
 		/// </summary>
@@ -109,9 +116,9 @@ namespace reshade { namespace api
 		/// </summary>
 		shader_storage_buffer = 7,
 		/// <summary>
-		/// Descriptors are an array of <see cref="acceleration_structure"/>.
+		/// Descriptors are an array of <see cref="resource_view"/>.
 		/// </summary>
-		acceleration_structure = 8
+		acceleration_structure = 10
 	};
 
 	/// <summary>
@@ -134,6 +141,7 @@ namespace reshade { namespace api
 	{
 		/// <summary>
 		/// OpenGL uniform buffer binding index.
+		/// In Vulkan this is equivalent to an offset for the range (in 32-bit values).
 		/// </summary>
 		uint32_t binding = 0;
 		/// <summary>
@@ -251,7 +259,17 @@ namespace reshade { namespace api
 
 	/// <summary>
 	/// An opaque handle to a pipeline layout object.
-	/// <para>In D3D12 this is a pointer to a 'ID3D12RootSignature' object, in Vulkan a 'VkPipelineLayout' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: An opaque value.</item>
+	/// <item>Direct3D 10: An opaque value.</item>
+	/// <item>Direct3D 11: An opaque value.</item>
+	/// <item>Direct3D 12: A pointer to a 'ID3D12RootSignature' object.</item>
+	/// <item>OpenGL: An opaque value.</item>
+	/// <item>Vulkan: A 'VkPipelineLayout' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(pipeline_layout);
 
@@ -1022,7 +1040,17 @@ namespace reshade { namespace api
 
 	/// <summary>
 	/// An opaque handle to a pipeline state object.
-	/// <para>In D3D9, D3D10, D3D11 or D3D12 this is a pointer to a 'IDirect3D(...)Shader', 'ID3D10(...)(Shader/State)', 'ID3D11(...)(Shader/State)' or 'ID3D12PipelineState' object, in Vulkan a 'VkPipeline' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: A pointer to a 'IDirect3D(...)Shader' object.</item>
+	/// <item>Direct3D 10: A pointer to a 'ID3D10(...)(Shader/State)' object.</item>
+	/// <item>Direct3D 11: A pointer to a 'ID3D11(...)(Shader/State)' object.</item>
+	/// <item>Direct3D 12: A pointer to a 'ID3D12PipelineState' object.</item>
+	/// <item>OpenGL: An opaque value.</item>
+	/// <item>Vulkan: A 'VkPipeline' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(pipeline);
 
@@ -1063,7 +1091,17 @@ namespace reshade { namespace api
 
 	/// <summary>
 	/// An opaque handle to a descriptor table in a descriptor heap.
-	/// <para>In Vulkan this is a 'VkDescriptorSet' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: An opaque value.</item>
+	/// <item>Direct3D 10: An opaque value.</item>
+	/// <item>Direct3D 11: An opaque value.</item>
+	/// <item>Direct3D 12: An opaque value.</item>
+	/// <item>OpenGL: An opaque value.</item>
+	/// <item>Vulkan: A 'VkDescriptorSet' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(descriptor_table);
 
@@ -1139,7 +1177,17 @@ namespace reshade { namespace api
 
 	/// <summary>
 	/// An opaque handle to a descriptor heap.
-	/// <para>In D3D12 this is a pointer to a 'ID3D12DescriptorHeap' object, in Vulkan a 'VkDescriptorPool' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: An opaque value.</item>
+	/// <item>Direct3D 10: An opaque value.</item>
+	/// <item>Direct3D 11: An opaque value.</item>
+	/// <item>Direct3D 12: A pointer to a 'ID3D12DescriptorHeap' object.</item>
+	/// <item>OpenGL: An opaque value.</item>
+	/// <item>Vulkan: A 'VkDescriptorPool' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(descriptor_heap);
 
@@ -1204,7 +1252,17 @@ namespace reshade { namespace api
 
 	/// <summary>
 	/// An opaque handle to a query heap.
-	/// <para>In D3D12 this is a pointer to a 'ID3D12QueryHeap' object, in Vulkan a 'VkQueryPool' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: An opaque value.</item>
+	/// <item>Direct3D 10: An opaque value.</item>
+	/// <item>Direct3D 11: An opaque value.</item>
+	/// <item>Direct3D 12: A pointer to a 'ID3D12QueryHeap' object.</item>
+	/// <item>OpenGL: An opaque value.</item>
+	/// <item>Vulkan: A 'VkQueryPool' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(query_heap);
 
@@ -1318,7 +1376,17 @@ namespace reshade { namespace api
 
 	/// <summary>
 	/// An opaque handle to a fence synchronization object.
-	/// <para>In D3D11 or D3D12 this is a pointer to a 'ID3D11Fence' or 'ID3D12Fence' object, in Vulkan a 'VkSemaphore' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: An opaque value.</item>
+	/// <item>Direct3D 10: An opaque value.</item>
+	/// <item>Direct3D 11: A pointer to a 'ID3D11Fence' object.</item>
+	/// <item>Direct3D 12: A pointer to a 'ID3D12Fence' object.</item>
+	/// <item>OpenGL: An opaque value.</item>
+	/// <item>Vulkan: A 'VkSemaphore' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(fence);
-} }
+}

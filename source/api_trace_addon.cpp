@@ -77,26 +77,26 @@ static void on_destroy_command_list(command_list *cmd_list)
 {
 }
 
-static void on_init_swapchain(swapchain *swapchain)
+static void on_init_swapchain(swapchain *swapchain, bool resize)
 {
 	device *const device = swapchain->get_device();
 
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::init_swapchain);
 	const uint32_t buffer_count = swapchain->get_back_buffer_count();
 	trace_data.write(buffer_count);
 	for (uint32_t i = 0; i < buffer_count; ++i)
 		trace_data.write(swapchain->get_back_buffer(i));
 }
-static void on_destroy_swapchain(swapchain *swapchain)
+static void on_destroy_swapchain(swapchain *swapchain, bool resize)
 {
 	device *const device = swapchain->get_device();
 
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::destroy_swapchain);
 	const uint32_t buffer_count = swapchain->get_back_buffer_count();
 	trace_data.write(buffer_count);
@@ -108,7 +108,7 @@ static void on_init_sampler(device *device, const sampler_desc &desc, sampler ha
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::init_sampler);
 	trace_data.write(desc);
 	trace_data.write(handle);
@@ -117,7 +117,7 @@ static void on_destroy_sampler(device *device, sampler handle)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::destroy_sampler);
 	trace_data.write(handle);
 }
@@ -126,7 +126,7 @@ static void on_init_resource(device *device, const resource_desc &desc, const su
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::init_resource);
 	trace_data.write(desc);
 	trace_data.write(initial_state);
@@ -175,7 +175,7 @@ static void on_destroy_resource(device *device, resource handle)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::destroy_resource);
 	trace_data.write(handle);
 }
@@ -184,7 +184,7 @@ static void on_init_resource_view(device *device, resource resource, resource_us
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::init_resource_view);
 	trace_data.write(resource);
 	trace_data.write(usage_type);
@@ -195,7 +195,7 @@ static void on_destroy_resource_view(device *device, resource_view handle)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::destroy_resource_view);
 	trace_data.write(handle);
 }
@@ -204,7 +204,7 @@ static void on_init_pipeline(device *device, pipeline_layout layout, uint32_t su
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::init_pipeline);
 	trace_data.write(layout);
 	trace_data.write(subobject_count);
@@ -299,7 +299,7 @@ static void on_destroy_pipeline(device *device, pipeline handle)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::destroy_pipeline);
 	trace_data.write(handle);
 }
@@ -308,7 +308,7 @@ static void on_init_pipeline_layout(device *device, uint32_t param_count, const 
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::init_pipeline_layout);
 	trace_data.write(param_count);
 	for (uint32_t i = 0; i < param_count; ++i)
@@ -344,7 +344,7 @@ static void on_destroy_pipeline_layout(device *device, pipeline_layout handle)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::destroy_pipeline_layout);
 	trace_data.write(handle);
 }
@@ -353,7 +353,7 @@ static bool on_copy_descriptor_tables(device *device, uint32_t count, const desc
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::copy_descriptor_tables);
 	trace_data.write(count);
 	for (uint32_t i = 0; i < count; ++i)
@@ -365,7 +365,7 @@ static bool on_update_descriptor_tables(device *device, uint32_t count, const de
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::update_descriptor_tables);
 	trace_data.write(count);
 	for (uint32_t i = 0; i < count; ++i)
@@ -405,7 +405,7 @@ static void on_map_buffer_region(device *device, resource resource, uint64_t off
 
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::map_buffer_region);
 	trace_data.write(resource);
 	trace_data.write(offset);
@@ -418,7 +418,7 @@ static void on_unmap_buffer_region(device *device, resource resource)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::unmap_buffer_region);
 	trace_data.write(resource);
 
@@ -442,7 +442,7 @@ static void on_map_texture_region(device *device, resource resource, uint32_t su
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::map_texture_region);
 	trace_data.write(resource);
 	trace_data.write(subresource);
@@ -468,7 +468,7 @@ static void on_unmap_texture_region(device *device, resource resource, uint32_t 
 
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::unmap_texture_region);
 	trace_data.write(resource);
 	trace_data.write(subresource);
@@ -501,7 +501,7 @@ static bool on_update_buffer_region(device *device, const void *data, resource r
 
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::update_buffer_region);
 	trace_data.write(resource);
 	trace_data.write(offset);
@@ -518,7 +518,7 @@ static bool on_update_texture_region(device *device, const subresource_data &dat
 
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::update_texture_region);
 	trace_data.write(resource);
 	trace_data.write(subresource);
@@ -542,7 +542,7 @@ static void on_barrier(command_list *cmd_list, uint32_t count, const resource *r
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::barrier);
 	trace_data.write(count);
 	for (uint32_t i = 0; i < count; ++i)
@@ -557,7 +557,7 @@ static void on_begin_render_pass(command_list *cmd_list, uint32_t count, const r
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::begin_render_pass);
 	trace_data.write(count);
 	for (uint32_t i = 0; i < count; ++i)
@@ -573,14 +573,14 @@ static void on_end_render_pass(command_list *cmd_list)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::end_render_pass);
 }
 static void on_bind_render_targets_and_depth_stencil(command_list *cmd_list, uint32_t count, const resource_view *rtvs, resource_view dsv)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_render_targets_and_depth_stencil);
 	trace_data.write(count);
 	for (uint32_t i = 0; i < count; ++i)
@@ -592,7 +592,7 @@ static void on_bind_pipeline(command_list *cmd_list, pipeline_stage type, pipeli
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_pipeline);
 	trace_data.write(type);
 	trace_data.write(pipeline);
@@ -601,7 +601,7 @@ static void on_bind_pipeline_states(command_list *cmd_list, uint32_t count, cons
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_pipeline_states);
 	trace_data.write(count);
 	for (uint32_t i = 0; i < count; ++i)
@@ -614,7 +614,7 @@ static void on_bind_viewports(command_list *cmd_list, uint32_t first, uint32_t c
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_viewports);
 	trace_data.write(first);
 	trace_data.write(count);
@@ -625,7 +625,7 @@ static void on_bind_scissor_rects(command_list *cmd_list, uint32_t first, uint32
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_scissor_rects);
 	trace_data.write(first);
 	trace_data.write(count);
@@ -636,7 +636,7 @@ static void on_push_constants(command_list *cmd_list, shader_stage stages, pipel
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::push_constants);
 	trace_data.write(stages);
 	trace_data.write(layout);
@@ -650,7 +650,7 @@ static void on_push_descriptors(command_list *cmd_list, shader_stage stages, pip
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::push_descriptors);
 	trace_data.write(stages);
 	trace_data.write(layout);
@@ -682,7 +682,7 @@ static void on_bind_descriptor_tables(command_list *cmd_list, shader_stage stage
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_descriptor_tables);
 	trace_data.write(stages);
 	trace_data.write(layout);
@@ -695,7 +695,7 @@ static void on_bind_index_buffer(command_list *cmd_list, resource buffer, uint64
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_index_buffer);
 	trace_data.write(buffer);
 	trace_data.write(offset);
@@ -705,7 +705,7 @@ static void on_bind_vertex_buffers(command_list *cmd_list, uint32_t first, uint3
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_vertex_buffers);
 	trace_data.write(first);
 	trace_data.write(count);
@@ -720,7 +720,7 @@ static void on_bind_stream_output_buffers(command_list *cmd_list, uint32_t first
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::bind_stream_output_buffers);
 	trace_data.write(first);
 	trace_data.write(count);
@@ -738,7 +738,7 @@ static bool on_draw(command_list *cmd_list, uint32_t vertex_count, uint32_t inst
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::draw);
 	trace_data.write(vertex_count);
 	trace_data.write(instance_count);
@@ -751,7 +751,7 @@ static bool on_draw_indexed(command_list *cmd_list, uint32_t index_count, uint32
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::draw_indexed);
 	trace_data.write(index_count);
 	trace_data.write(instance_count);
@@ -765,7 +765,7 @@ static bool on_dispatch(command_list *cmd_list, uint32_t group_count_x, uint32_t
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::dispatch);
 	trace_data.write(group_count_x);
 	trace_data.write(group_count_y);
@@ -777,7 +777,7 @@ static bool on_draw_or_dispatch_indirect(command_list *cmd_list, indirect_comman
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::draw_or_dispatch_indirect);
 	trace_data.write(type);
 	trace_data.write(buffer);
@@ -792,7 +792,7 @@ static bool on_copy_resource(command_list *cmd_list, resource src, resource dst)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::copy_resource);
 	trace_data.write(src);
 	trace_data.write(dst);
@@ -803,7 +803,7 @@ static bool on_copy_buffer_region(command_list *cmd_list, resource src, uint64_t
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::copy_buffer_region);
 	trace_data.write(src);
 	trace_data.write(src_offset);
@@ -817,7 +817,7 @@ static bool on_copy_buffer_to_texture(command_list *cmd_list, resource src, uint
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::copy_buffer_to_texture);
 	trace_data.write(src);
 	trace_data.write(src_offset);
@@ -836,7 +836,7 @@ static bool on_copy_texture_region(command_list *cmd_list, resource src, uint32_
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::copy_texture_region);
 	trace_data.write(src);
 	trace_data.write(src_subresource);
@@ -858,7 +858,7 @@ static bool on_copy_texture_to_buffer(command_list *cmd_list, resource src, uint
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::copy_texture_to_buffer);
 	trace_data.write(src);
 	trace_data.write(src_subresource);
@@ -877,7 +877,7 @@ static bool on_resolve_texture_region(command_list *cmd_list, resource src, uint
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::resolve_texture_region);
 	trace_data.write(src);
 	trace_data.write(src_subresource);
@@ -899,7 +899,7 @@ static bool on_clear_depth_stencil_view(command_list *cmd_list, resource_view ds
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::clear_depth_stencil_view);
 	trace_data.write(dsv);
 	const bool has_depth = depth != nullptr;
@@ -917,7 +917,7 @@ static bool on_clear_render_target_view(command_list *cmd_list, resource_view rt
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::clear_render_target_view);
 	trace_data.write(rtv);
 	trace_data.write(color, sizeof(float) * 4);
@@ -928,7 +928,7 @@ static bool on_clear_unordered_access_view_uint(command_list *cmd_list, resource
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::clear_unordered_access_view_uint);
 	trace_data.write(uav);
 	trace_data.write(values, sizeof(uint32_t) * 4);
@@ -939,7 +939,7 @@ static bool on_clear_unordered_access_view_float(command_list *cmd_list, resourc
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::clear_unordered_access_view_float);
 	trace_data.write(uav);
 	trace_data.write(values, sizeof(float) * 4);
@@ -951,7 +951,7 @@ static bool on_generate_mipmaps(command_list *cmd_list, resource_view srv)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = cmd_list->get_device()->get_private_data<device_data>();
+	auto &trace_data = *cmd_list->get_device()->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::generate_mipmaps);
 	trace_data.write(srv);
 
@@ -987,7 +987,7 @@ static void on_present(command_queue *queue, swapchain *, const rect *, const re
 
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 
-	auto &trace_data = device->get_private_data<device_data>();
+	auto &trace_data = *device->get_private_data<device_data>();
 	trace_data.write(reshade::addon_event::present);
 }
 

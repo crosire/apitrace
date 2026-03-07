@@ -7,7 +7,7 @@
 
 #include "reshade_api_pipeline.hpp"
 
-namespace reshade { namespace api
+namespace reshade::api
 {
 	/// <summary>
 	/// Underlying graphics API a device is using.
@@ -186,6 +186,21 @@ namespace reshade { namespace api
 		/// If this feature is not present, <see cref="resource_view_type::acceleration_structure"/>, <see cref="command_list::dispatch_rays"/>, <see cref="command_list::copy_acceleration_structure"/>, <see cref="command_list::build_acceleration_structure"/> and <see cref="command_list::query_acceleration_structures"/> must not be used.
 		/// </summary>
 		ray_tracing,
+		/// <summary>
+		/// Specifies whether deferred buffer updates can be used.
+		/// If this feature is not present, <see cref="command_list::update_buffer_region"/> must not be used.
+		/// </summary>
+		update_buffer_region_command,
+		/// <summary>
+		/// Specifies whether deferred texture updates can be used.
+		/// If this feature is not present, <see cref="command_list::update_texture_region"/> must not be used.
+		/// </summary>
+		update_texture_region_command,
+		/// <summary>
+		/// Specifies whether GPU upload heaps are supported.
+		/// If this feature is not present, <see cref="memory_heap::gpu_upload"/> must not be used.
+		/// </summary>
+		gpu_upload_heap,
 	};
 
 	/// <summary>
@@ -197,6 +212,7 @@ namespace reshade { namespace api
 		/// <summary>
 		/// Version of the underlying graphics API the device is using.
 		/// Data is a 32-bit unsigned integer value.
+		/// The major version is encoded in bit 12-16, the minor version in bit 8-12. So the major version can be extracted with <c>(api_version >> 12) & 0xF</c>, the object with <c>(api_version >> 8) & 0xF</c>.
 		/// </summary>
 		api_version = 1,
 		/// <summary>
@@ -205,17 +221,17 @@ namespace reshade { namespace api
 		/// </summary>
 		driver_version,
 		/// <summary>
-		/// PCI vendor ID of the hardware associated with the logical render device.
+		/// PCI vendor ID of the adapter associated with the device.
 		/// Data is a 32-bit unsigned integer value.
 		/// </summary>
 		vendor_id,
 		/// <summary>
-		/// PCI device ID of the hardware associated with the logical render device.
+		/// PCI device ID of the adapter associated with the device.
 		/// Data is a 32-bit unsigned integer value.
 		/// </summary>
 		device_id,
 		/// <summary>
-		/// Description text of the hardware associated with the logical render device.
+		/// Description text of the adapter associated with the device.
 		/// Data is an array of 256 byte-sized characters representing a null-terminated string.
 		/// </summary>
 		description,
@@ -234,6 +250,11 @@ namespace reshade { namespace api
 		/// Data is a 32-bit unsigned integer value.
 		/// </summary>
 		shader_group_handle_alignment,
+		/// <summary>
+		/// Local identifier of the adapter associated with the device.
+		/// Data is a 64-bit unsigned integer value, or more accurately a <c>LUID</c> object.
+		/// </summary>
+		adapter_luid,
 	};
 
 	/// <summary>
@@ -269,21 +290,21 @@ namespace reshade { namespace api
 		/// Gets a reference to user-defined data from the object that was previously allocated via <see cref="create_private_data"/>.
 		/// </summary>
 		template <typename T>
-		T &get_private_data() const
+		T *get_private_data() const
 		{
 			uint64_t res;
 			get_private_data(reinterpret_cast<const uint8_t *>(&__uuidof(T)), &res);
-			return *reinterpret_cast<T *>(static_cast<uintptr_t>(res));
+			return reinterpret_cast<T *>(static_cast<uintptr_t>(res));
 		}
 		/// <summary>
 		/// Allocates user-defined data and stores it in the object.
 		/// </summary>
 		template <typename T, typename... Args>
-		T &create_private_data(Args &&... args)
+		T *create_private_data(Args &&... args)
 		{
 			uint64_t res = reinterpret_cast<uintptr_t>(new T(static_cast<Args &&>(args)...));
 			set_private_data(reinterpret_cast<const uint8_t *>(&__uuidof(T)),  res);
-			return *reinterpret_cast<T *>(static_cast<uintptr_t>(res));
+			return reinterpret_cast<T *>(static_cast<uintptr_t>(res));
 		}
 		/// <summary>
 		/// Frees user-defined data that was previously allocated via <see cref="create_private_data"/>.
@@ -291,15 +312,13 @@ namespace reshade { namespace api
 		template <typename T>
 		void destroy_private_data()
 		{
-			uint64_t res;
-			get_private_data(reinterpret_cast<const uint8_t *>(&__uuidof(T)), &res);
-			delete  reinterpret_cast<T *>(static_cast<uintptr_t>(res));
+			delete get_private_data<T>();
 			set_private_data(reinterpret_cast<const uint8_t *>(&__uuidof(T)), 0);
 		}
 	};
 
 	/// <summary>
-	/// A logical render device, used for resource creation and global operations.
+	/// A device, used for resource creation and global operations.
 	/// <para>Functionally equivalent to a 'IDirect3DDevice9', 'ID3D10Device', 'ID3D11Device', 'ID3D12Device', 'HGLRC' or 'VkDevice'.</para>
 	/// </summary>
 	/// <remarks>
@@ -413,21 +432,27 @@ namespace reshade { namespace api
 		virtual void unmap_texture_region(resource resource, uint32_t subresource) = 0;
 
 		/// <summary>
-		/// Uploads data to a buffer resource.
+		/// Uploads data to a buffer resource immediately.
 		/// </summary>
+		/// <remarks>
+		/// The <paramref name="dest"/>ination resource has to be in the <see cref="resource_usage::copy_dest"/> state.
+		/// </remarks>
 		/// <param name="data">Pointer to the data to upload.</param>
-		/// <param name="resource">Buffer resource to upload to.</param>
-		/// <param name="offset">Offset (in bytes) into the buffer resource to start uploading to.</param>
-		/// <param name="size">Number of bytes to upload.</param>
-		virtual void update_buffer_region(const void *data, resource resource, uint64_t offset, uint64_t size) = 0;
+		/// <param name="dest">Buffer resource to upload to.</param>
+		/// <param name="dest_offset">Offset (in bytes) into the buffer resource to start uploading to.</param>
+		/// <param name="size">Number of bytes to upload. Set to -1 (UINT64_MAX) to indicate that the entire buffer should be updated.</param>
+		virtual void update_buffer_region(const void *data, resource dest, uint64_t dest_offset, uint64_t size) = 0;
 		/// <summary>
-		/// Uploads data to a texture resource.
+		/// Uploads data to a texture resource immediately.
 		/// </summary>
+		/// <remarks>
+		/// The <paramref name="dest"/>ination has to be in the <see cref="resource_usage::copy_dest"/> state.
+		/// </remarks>
 		/// <param name="data">Pointer to the data to upload.</param>
-		/// <param name="resource">Texture resource to upload to.</param>
-		/// <param name="subresource">Index of the subresource to upload to (<c>level + (layer * levels)</c>).</param>
-		/// <param name="box">Optional 3D box (or <see langword="nullptr"/> to reference the entire subresource) that defines the region in the <paramref name="resource"/> to upload to.</param>
-		virtual void update_texture_region(const subresource_data &data, resource resource, uint32_t subresource, const subresource_box *box = nullptr) = 0;
+		/// <param name="dest">Texture resource to upload to.</param>
+		/// <param name="dest_subresource">Index of the subresource to upload to (<c>level + (layer * levels)</c>).</param>
+		/// <param name="dest_box">Optional 3D box (or <see langword="nullptr"/> to reference the entire subresource) that defines the region in the <paramref name="resource"/> to upload to.</param>
+		virtual void update_texture_region(const subresource_data &data, resource dest, uint32_t dest_subresource, const subresource_box *dest_box = nullptr) = 0;
 
 		/// <summary>
 		/// Creates a new pipeline state object.
@@ -628,7 +653,7 @@ namespace reshade { namespace api
 	};
 
 	/// <summary>
-	/// The base class for objects that are children to a logical render <see cref="device"/>.
+	/// The base class for objects that are children to a <see cref="device"/>.
 	/// </summary>
 	struct __declspec(novtable) device_object : public api_object
 	{
@@ -814,7 +839,7 @@ namespace reshade { namespace api
 		/// <param name="max_sizes">Optional pointer to an array of size values, one for each buffer. Can be <see langword="nullptr"/> or have elements set to UINT64_MAX to use the entire buffer.</param>
 		/// <param name="counter_buffers">Pointer to the first element of an array of counter buffer resources. These resources must have been created with the <see cref="resource_usage::stream_output"/> usage.</param>
 		/// <param name="counter_offsets">Pointer to the first element of an array of counter offset values, one for each counter buffer. Each offset is the number of bytes from the start of the counter buffer to the first element to write to.</param>
-		virtual void bind_stream_output_buffers(uint32_t first, uint32_t count, const api::resource *buffers, const uint64_t *offsets, const uint64_t *max_sizes, const api::resource *counter_buffers, const uint64_t *counter_offsets) = 0;
+		virtual void bind_stream_output_buffers(uint32_t first, uint32_t count, const resource *buffers, const uint64_t *offsets, const uint64_t *max_sizes, const resource *counter_buffers, const uint64_t *counter_offsets) = 0;
 
 		/// <summary>
 		/// Draws non-indexed primitives.
@@ -876,7 +901,7 @@ namespace reshade { namespace api
 		/// <param name="source_offset">Offset (in bytes) into the <paramref name="source"/> buffer to start copying at.</param>
 		/// <param name="dest">Buffer resource to copy to.</param>
 		/// <param name="dest_offset">Offset (in bytes) into the <paramref name="dest"/>ination buffer to start copying to.</param>
-		/// <param name="size">Number of bytes to copy.</param>
+		/// <param name="size">Number of bytes to copy. Set to -1 (UINT64_MAX) to indicate that the entire buffer should be copied.</param>
 		virtual void copy_buffer_region(resource source, uint64_t source_offset, resource dest, uint64_t dest_offset, uint64_t size) = 0;
 		/// <summary>
 		/// Copies a texture region from the <paramref name="source"/> buffer to the <paramref name="dest"/>ination texture.
@@ -1105,7 +1130,7 @@ namespace reshade { namespace api
 		/// <param name="source">Acceleration structure to read data from when <paramref name="mode"/> is <see cref="acceleration_structure_build_mode::update"/>, otherwise zero.</param>
 		/// <param name="dest">Acceleration structure to write data to.</param>
 		/// <param name="mode">Choose between building a new or updating an existing acceleration structure.</param>
-		virtual void build_acceleration_structure(acceleration_structure_type type, acceleration_structure_build_flags flags, uint32_t input_count, const acceleration_structure_build_input *inputs, api::resource scratch, uint64_t scratch_offset, resource_view source, resource_view dest, acceleration_structure_build_mode mode) = 0;
+		virtual void build_acceleration_structure(acceleration_structure_type type, acceleration_structure_build_flags flags, uint32_t input_count, const acceleration_structure_build_input *inputs, resource scratch, uint64_t scratch_offset, resource_view source, resource_view dest, acceleration_structure_build_mode mode) = 0;
 
 		/// <summary>
 		/// Queries acceleration structure size parameters.
@@ -1117,6 +1142,31 @@ namespace reshade { namespace api
 		/// <param name="type">Type of the acceleration structure query.</param>
 		/// <param name="first">Index of the first query in the query heap to write the result to.</param>
 		virtual void query_acceleration_structures(uint32_t count, const resource_view *acceleration_structures, query_heap heap, query_type type, uint32_t first) = 0;
+
+		/// <summary>
+		/// Uploads data to a buffer resource when the command list is executed.
+		/// </summary>
+		/// <remarks>
+		/// The <paramref name="dest"/>ination resource has to be in the <see cref="resource_usage::copy_dest"/> state.
+		/// </remarks>
+		/// <seealso cref="device_caps::update_buffer_region_command"/>
+		/// <param name="data">Pointer to the data to upload.</param>
+		/// <param name="dest">Buffer resource to upload to.</param>
+		/// <param name="dest_offset">Offset (in bytes) into the buffer resource to start uploading to.</param>
+		/// <param name="size">Number of bytes to upload.</param>
+		virtual void update_buffer_region(const void *data, resource dest, uint64_t dest_offset, uint64_t size) = 0;
+		/// <summary>
+		/// Uploads data to a texture resource when the command list is executed.
+		/// </summary>
+		/// <remarks>
+		/// The <paramref name="dest"/>ination resource has to be in the <see cref="resource_usage::copy_dest"/> state.
+		/// </remarks>
+		/// <seealso cref="device_caps::update_texture_region_command"/>
+		/// <param name="data">Pointer to the data to upload.</param>
+		/// <param name="dest">Texture resource to upload to.</param>
+		/// <param name="dest_subresource">Index of the subresource to upload to (<c>level + (layer * levels)</c>).</param>
+		/// <param name="dest_box">Optional 3D box (or <see langword="nullptr"/> to reference the entire subresource) that defines the region in the <paramref name="resource"/> to upload to.</param>
+		virtual void update_texture_region(const subresource_data &data, resource dest, uint32_t dest_subresource, const subresource_box *dest_box = nullptr) = 0;
 	};
 
 	/// <summary>
@@ -1225,7 +1275,7 @@ namespace reshade { namespace api
 
 		/// <summary>
 		/// Swap chain creation flags.
-		/// <para>Depending on the graphics API this can be a 'D3DPRESENT', 'DXGI_PRESENT', 'PFD_*' or 'VkSwapchainCreateFlagsKHR' value.</para>
+		/// <para>Depending on the graphics API this can be a 'D3DPRESENT', 'DXGI_SWAP_CHAIN_FLAG', 'PFD_*' or 'VkSwapchainCreateFlagsKHR' value.</para>
 		/// </summary>
 		uint32_t present_flags = 0;
 
@@ -1239,6 +1289,16 @@ namespace reshade { namespace api
 		/// Set to zero to use the default.
 		/// </summary>
 		float fullscreen_refresh_rate = 0;
+
+		/// <summary>
+		/// Defines how to synchronize presentation of a frame with the vertical blank.
+		/// <list type="bullet">
+		/// <item>0: Disable synchronization, presentation occurs immediately.</item>
+		/// <item>1-4: Synchronize for at least n vertical blanks.</item>
+		/// <item>UINT32_MAX: Use the default set by the application.</item>
+		/// </list>
+		/// </summary>
+		uint32_t sync_interval = UINT32_MAX;
 	};
 
 	/// <summary>
@@ -1282,4 +1342,4 @@ namespace reshade { namespace api
 		/// </summary>
 		virtual color_space get_color_space() const = 0;
 	};
-} }
+}

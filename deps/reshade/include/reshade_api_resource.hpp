@@ -26,7 +26,7 @@
 
 #include "reshade_api_format.hpp"
 
-namespace reshade { namespace api
+namespace reshade::api
 {
 	/// <summary>
 	/// Comparison operations.
@@ -131,7 +131,17 @@ namespace reshade { namespace api
 
 	/// <summary>
 	/// An opaque handle to a sampler state object.
-	/// <para>Depending on the graphics API this can be a pointer to a 'ID3D10SamplerState', 'ID3D11SamplerState' or a 'D3D12_CPU_DESCRIPTOR_HANDLE' (to a sampler descriptor) or 'VkSampler' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: An opaque value.</item>
+	/// <item>Direct3D 10: A pointer to a 'ID3D10SamplerState' object.</item>
+	/// <item>Direct3D 11: A pointer to a 'ID3D11SamplerState' object.</item>
+	/// <item>Direct3D 12: A 'D3D12_CPU_DESCRIPTOR_HANDLE' (to a sampler descriptor).</item>
+	/// <item>OpenGL: An OpenGL sampler object name.</item>
+	/// <item>Vulkan: A 'VkSampler' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(sampler);
 
@@ -151,14 +161,39 @@ namespace reshade { namespace api
 	/// </summary>
 	enum class memory_heap : uint32_t
 	{
-		unknown, // Usually indicates a resource that is reserved, but not yet bound to any memory.
-		gpu_only,
-		// Upload heap
-		cpu_to_gpu,
-		// Readback heap
-		gpu_to_cpu,
-		cpu_only,
-		custom
+		/// <summary>
+		/// Usually indicates a resource that is reserved, but not yet bound to any memory.
+		/// </summary>
+		unknown,
+		/// <summary>
+		/// The default heap, which the GPU can read and write, but the CPU does not have access.
+		/// </summary>
+		default_,
+		/// <summary>
+		/// This heap has CPU access optimized for uploading to the GPU.
+		/// </summary>
+		upload,
+		/// <summary>
+		/// This heap has CPU access optimized for reading data back from the GPU.
+		/// </summary>
+		readback,
+		/// <summary>
+		/// This heap has custom properties not covered by the other types.
+		/// </summary>
+		custom = 5,
+		/// <summary>
+		/// This heap is only accessible by the CPU.
+		/// </summary>
+		scratch = 4,
+		/// <summary>
+		/// CPU visible GPU memory, when available via Resizable BAR.
+		/// </summary>
+		gpu_upload = 6,
+
+		gpu_only = default_,
+		cpu_to_gpu = upload,
+		gpu_to_cpu = readback,
+		cpu_only = scratch
 	};
 
 	/// <summary>
@@ -186,6 +221,11 @@ namespace reshade { namespace api
 		/// Required for <see cref="map_access::write_discard"/>. The flag is not supported in D3D12 or Vulkan.
 		/// </summary>
 		dynamic = (1 << 3),
+		/// <summary>
+		/// Immutable resources can never be written to again after creationn, either by the CPU or the GPU.
+		/// The flag is only supported in D3D10 and D3D11.
+		/// </summary>
+		immutable = (1 << 4),
 		/// <summary>
 		/// Required to create <see cref="resource_view_type::texture_cube"/> or <see cref="resource_view_type::texture_cube_array"/> views of the resource.
 		/// </summary>
@@ -250,7 +290,7 @@ namespace reshade { namespace api
 	/// </summary>
 	struct [[nodiscard]] resource_desc
 	{
-		constexpr resource_desc() : texture() {}
+		constexpr resource_desc() : texture({ 0, 0, 0, 0, format::unknown, 0 }) {}
 		constexpr resource_desc(uint64_t size, memory_heap heap, resource_usage usage, resource_flags flags = resource_flags::none) :
 			type(resource_type::buffer), buffer({ size }), heap(heap), usage(usage), flags(flags) {}
 		constexpr resource_desc(uint32_t width, uint32_t height, uint16_t layers, uint16_t levels, format format, uint16_t samples, memory_heap heap, resource_usage usage, resource_flags flags = resource_flags::none) :
@@ -331,7 +371,17 @@ namespace reshade { namespace api
 	/// <summary>
 	/// An opaque handle to a resource object (buffer, texture, ...).
 	/// <para>Resources created by the application are only guaranteed to be valid during event callbacks.</para>
-	/// <para>Depending on the graphics API this can be a pointer to a 'IDirect3DResource9', 'ID3D10Resource', 'ID3D11Resource' or 'ID3D12Resource' object or a 'VkImage' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: A pointer to a 'IDirect3DResource9' object.</item>
+	/// <item>Direct3D 10: A pointer to a 'ID3D10Resource' object.</item>
+	/// <item>Direct3D 11: A pointer to a 'ID3D11Resource' object.</item>
+	/// <item>Direct3D 12: A pointer to a 'ID3D12Resource' object.</item>
+	/// <item>OpenGL: The upper 24-bit contain the OpenGL object type (like GL_BUFFER, GL_TEXTURE_2D, GL_RENDERBUFFER, ...), the lower 32-bit contain the OpenGL object name. So the object type can be extracted with <c>(handle >> 40)</c>, the object with <c>(handle & 0xFFFFFFFF)</c>.</item>
+	/// <item>Vulkan: A 'VkImage' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(resource);
 
@@ -359,7 +409,7 @@ namespace reshade { namespace api
 	/// </summary>
 	struct [[nodiscard]] resource_view_desc
 	{
-		constexpr resource_view_desc() : texture() {}
+		constexpr resource_view_desc() : texture({ 0, 0, 0, 0 }) {}
 		constexpr resource_view_desc(format format, uint64_t offset, uint64_t size) :
 			type(resource_view_type::buffer), format(format), buffer({ offset, size }) {}
 		constexpr resource_view_desc(format format, uint32_t first_level, uint32_t levels, uint32_t first_layer, uint32_t layers) :
@@ -427,7 +477,17 @@ namespace reshade { namespace api
 	/// <summary>
 	/// An opaque handle to a resource view object (depth-stencil, render target, shader resource view, ...).
 	/// <para>Resource views created by the application are only guaranteed to be valid during event callbacks.</para>
-	/// <para>Depending on the graphics API this can be a pointer to a 'IDirect3DResource9', 'ID3D10View' or 'ID3D11View' object, or a 'D3D12_CPU_DESCRIPTOR_HANDLE' (to a view descriptor), 'D3D12_GPU_VIRTUAL_ADDRESS' (to an acceleration structrue), 'VkImageView' or 'VkAccelerationStructureKHR' handle.</para>
+	/// <para>
+	/// Depending on the graphics API this can be:
+	/// <list type="bullet">
+	/// <item>Direct3D 9: A pointer to a 'IDirect3DResource9' object.</item>
+	/// <item>Direct3D 10: A pointer to a 'ID3D10View' object.</item>
+	/// <item>Direct3D 11: A pointer to a 'ID3D11View' object.</item>
+	/// <item>Direct3D 12: A 'D3D12_CPU_DESCRIPTOR_HANDLE' (to a view descriptor) or 'D3D12_GPU_VIRTUAL_ADDRESS' (to an acceleration structrue).</item>
+	/// <item>OpenGL: The upper 24-bit contain the OpenGL object type (like GL_TEXTURE_BUFFER, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP_POSITIVE_X, ...), the lower 32-bit contain the OpenGL object ID. So the object type can be extracted with <c>(handle >> 40)</c>, the object with <c>(handle & 0xFFFFFFFF)</c>.</item>
+	/// <item>Vulkan: A 'VkImageView' or 'VkAccelerationStructureKHR' handle.</item>
+	/// </list>
+	/// </para>
 	/// </summary>
 	RESHADE_DEFINE_HANDLE(resource_view);
 
@@ -690,4 +750,4 @@ namespace reshade { namespace api
 		/// </summary>
 		acceleration_structure_build_input_flags flags = acceleration_structure_build_input_flags::none;
 	};
-} }
+}
