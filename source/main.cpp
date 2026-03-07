@@ -11,23 +11,9 @@ extern bool play_frame(trace_data_read &trace_data, reshade::api::command_list *
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 {
+	// These take effect when the ReShade DLL is loaded via delay loading below
 	SetEnvironmentVariable(TEXT("RESHADE_DISABLE_LOADING_CHECK"), TEXT("1"));
 	SetEnvironmentVariable(TEXT("RESHADE_DISABLE_GRAPHICS_HOOK"), TEXT("1"));
-
-	const HMODULE reshade_module = LoadLibrary(
-#ifndef _WIN64
-		TEXT("ReShade32.dll")
-#else
-		TEXT("ReShade64.dll")
-#endif
-		);
-	if (reshade_module == nullptr)
-		return 1;
-	const auto create_effect_runtime = reinterpret_cast<decltype(&ReShadeCreateEffectRuntime)>(GetProcAddress(reshade_module, "ReShadeCreateEffectRuntime"));
-	const auto destroy_effect_runtime = reinterpret_cast<decltype(&ReShadeDestroyEffectRuntime)>(GetProcAddress(reshade_module, "ReShadeDestroyEffectRuntime"));
-	const auto update_and_present_effect_runtime = reinterpret_cast<decltype(&ReShadeUpdateAndPresentEffectRuntime)>(GetProcAddress(reshade_module, "ReShadeUpdateAndPresentEffectRuntime"));
-	if (create_effect_runtime == nullptr || destroy_effect_runtime == nullptr || update_and_present_effect_runtime == nullptr)
-		return 1;
 
 	WNDCLASS wc = { sizeof(wc) };
 	wc.hInstance = hInstance;
@@ -77,7 +63,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int nCmdShow
 		return 1;
 
 	reshade::api::effect_runtime *runtime = nullptr;
-	if (!create_effect_runtime(graphics_api, app->get_device(), app->get_command_queue(), app->get_swapchain(), ".\\", &runtime))
+	if (!reshade::create_effect_runtime(graphics_api, app->get_device(), app->get_command_queue(), app->get_swapchain(), ".\\", &runtime))
 		return 1;
 
 	MSG msg = {};
@@ -94,12 +80,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int nCmdShow
 		play_frame(trace_data, cmd_list, runtime);
 		cmd_list->barrier(runtime->get_current_back_buffer(), reshade::api::resource_usage::render_target, reshade::api::resource_usage::present);
 
-		update_and_present_effect_runtime(runtime);
+		reshade::update_and_present_effect_runtime(runtime);
 
 		app->present();
 	}
 
-	destroy_effect_runtime(runtime);
+	reshade::destroy_effect_runtime(runtime);
 
 	return static_cast<int>(msg.wParam);
 }
