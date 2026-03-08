@@ -89,11 +89,8 @@ static void play_init_resource(trace_data_read &trace_data, device *device)
 	}
 	else
 	{
-		if (device->get_api() == device_api::opengl && desc.texture.levels == 0)
-			desc.texture.levels = 1;
-
-		const uint32_t levels = desc.texture.levels;
-		const uint32_t layers = (desc.type != resource_type::texture_3d) ? desc.texture.depth_or_layers : 1;
+		const uint32_t levels = desc.texture.levels == 0 ? 1 : desc.texture.levels;
+		const uint32_t layers = desc.type != resource_type::texture_3d ? desc.texture.depth_or_layers : 1;
 
 		for (uint32_t layer = 0; layer < layers; ++layer)
 		{
@@ -141,7 +138,7 @@ static void play_destroy_resource(trace_data_read &trace_data, device *device)
 
 static void play_init_resource_view(trace_data_read &trace_data, device *device)
 {
-	const auto resource_handle = trace_data.read<resource_view>().handle;
+	const auto resource_handle = trace_data.read<resource>().handle;
 	const auto usage_type = trace_data.read<resource_usage>();
 	const auto desc = trace_data.read<resource_view_desc>();
 	const auto handle = trace_data.read<resource_view>().handle;
