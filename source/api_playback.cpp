@@ -7,8 +7,6 @@
 #include <reshade.hpp>
 #include <vector>
 #include <unordered_map>
-#include <algorithm>
-#include <shared_mutex>
 
 using namespace reshade::api;
 
@@ -302,7 +300,7 @@ static void play_init_pipeline_layout(trace_data_read &trace_data, device *devic
 
 	std::vector<pipeline_layout_param> params(param_count);
 	std::vector<std::vector<descriptor_range>> ranges(param_count);
-	std::vector<std::vector<descriptor_range_with_static_samplers>> ranges_with_static_samplers(param_count);
+	std::vector<std::vector<descriptor_range_with_flags>> ranges_with_flags(param_count);
 
 	for (uint32_t i = 0; i < param_count; ++i)
 	{
@@ -324,13 +322,13 @@ static void play_init_pipeline_layout(trace_data_read &trace_data, device *devic
 				ranges[i][k] = trace_data.read<descriptor_range>();
 			params[i].descriptor_table.ranges = ranges[i].data();
 			break;
-		case pipeline_layout_param_type::descriptor_table_with_static_samplers:
-		case pipeline_layout_param_type::push_descriptors_with_static_samplers:
-			params[i].descriptor_table_with_static_samplers.count = trace_data.read<uint32_t>();
-			ranges_with_static_samplers[i].resize(params[i].descriptor_table_with_static_samplers.count);
-			for (uint32_t k = 0; k < params[i].descriptor_table_with_static_samplers.count; ++k)
-				ranges_with_static_samplers[i][k] = trace_data.read<descriptor_range_with_static_samplers>();
-			params[i].descriptor_table_with_static_samplers.ranges = ranges_with_static_samplers[i].data();
+		case pipeline_layout_param_type::descriptor_table_with_flags:
+		case pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
+			params[i].descriptor_table_with_flags.count = trace_data.read<uint32_t>();
+			ranges_with_flags[i].resize(params[i].descriptor_table_with_flags.count);
+			for (uint32_t k = 0; k < params[i].descriptor_table_with_flags.count; ++k)
+				ranges_with_flags[i][k] = trace_data.read<descriptor_range_with_flags>();
+			params[i].descriptor_table_with_flags.ranges = ranges_with_flags[i].data();
 			break;
 		}
 	}

@@ -329,11 +329,11 @@ static void on_init_pipeline_layout(device *device, uint32_t param_count, const 
 			for (uint32_t k = 0; k < params[i].descriptor_table.count; ++k)
 				trace_data.write(params[i].descriptor_table.ranges[k]);
 			break;
-		case pipeline_layout_param_type::descriptor_table_with_static_samplers:
-		case pipeline_layout_param_type::push_descriptors_with_static_samplers:
-			trace_data.write(params[i].descriptor_table_with_static_samplers.count);
-			for (uint32_t k = 0; k < params[i].descriptor_table_with_static_samplers.count; ++k)
-				trace_data.write(params[i].descriptor_table_with_static_samplers.ranges[k]);
+		case pipeline_layout_param_type::descriptor_table_with_flags:
+		case pipeline_layout_param_type::push_descriptors_with_ranges_and_flags:
+			trace_data.write(params[i].descriptor_table_with_flags.count);
+			for (uint32_t k = 0; k < params[i].descriptor_table_with_flags.count; ++k)
+				trace_data.write(params[i].descriptor_table_with_flags.ranges[k]);
 			break;
 		}
 	}
@@ -553,7 +553,7 @@ static void on_barrier(command_list *cmd_list, uint32_t count, const resource *r
 	}
 }
 
-static void on_begin_render_pass(command_list *cmd_list, uint32_t count, const render_pass_render_target_desc *rts, const render_pass_depth_stencil_desc *ds)
+static void on_begin_render_pass(command_list *cmd_list, uint32_t count, const render_pass_render_target_desc *rts, const render_pass_depth_stencil_desc *ds, render_pass_flags)
 {
 	const std::unique_lock<std::shared_mutex> lock(s_mutex);
 

@@ -32,7 +32,7 @@ namespace reshade::api
 		opengl = 0x10000,
 		/// <summary>Vulkan</summary>
 		/// <remarks>https://www.khronos.org/vulkan/</remarks>
-		vulkan = 0x20000
+		vulkan = 0x20000,
 	};
 
 	/// <summary>
@@ -674,7 +674,7 @@ namespace reshade::api
 		draw_indexed,
 		dispatch,
 		dispatch_mesh,
-		dispatch_rays
+		dispatch_rays,
 	};
 
 	/// <summary>
@@ -710,7 +710,7 @@ namespace reshade::api
 		/// <param name="count">Number of render target views to bind.</param>
 		/// <param name="rts">Pointer to the first element of an array of render target descriptions.</param>
 		/// <param name="ds">Optional pointer to a depth-stencil description, or <see langword="nullptr"/> to bind none.</param>
-		virtual void begin_render_pass(uint32_t count, const render_pass_render_target_desc *rts, const render_pass_depth_stencil_desc *ds = nullptr) = 0;
+		virtual void begin_render_pass(uint32_t count, const render_pass_render_target_desc *rts, const render_pass_depth_stencil_desc *ds = nullptr, render_pass_flags flags = render_pass_flags::none) = 0;
 		/// <summary>
 		/// Ends a render pass.
 		/// This must be preceeded by a call to <see cref="begin_render_pass"/>.
@@ -1177,7 +1177,7 @@ namespace reshade::api
 	{
 		graphics = 0x1,
 		compute = 0x2,
-		copy = 0x4
+		copy = 0x4,
 	};
 	RESHADE_DEFINE_ENUM_FLAG_OPERATORS(command_queue_type);
 
